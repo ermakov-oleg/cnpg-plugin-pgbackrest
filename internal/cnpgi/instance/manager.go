@@ -19,6 +19,8 @@ package instance
 
 import (
 	"context"
+	"net/http"
+	"net/http/pprof"
 	"path"
 
 	cnpgv1 "github.com/cloudnative-pg/cloudnative-pg/api/v1"
@@ -47,6 +49,23 @@ func init() {
 func Start(ctx context.Context) error {
 	setupLog := log.FromContext(ctx)
 	setupLog.Info("Starting pgbackrest instance plugin")
+
+	if pprofAddr := viper.GetString("pprof-server"); pprofAddr != "" {
+		setupLog.Info("Starting pprof HTTP server", "address", pprofAddr)
+		mux := http.NewServeMux()
+		mux.HandleFunc("/debug/pprof/", pprof.Index)
+		mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+		mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
+		mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+		mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
+		go func() {
+			//nolint:gosec // This is a debug server, not exposed externally
+			if err := http.ListenAndServe(pprofAddr, mux); err != nil {
+				setupLog.Error(err, "pprof server failed")
+			}
+		}()
+	}
+
 	podName := viper.GetString("pod-name")
 
 	controllerOptions := ctrl.Options{

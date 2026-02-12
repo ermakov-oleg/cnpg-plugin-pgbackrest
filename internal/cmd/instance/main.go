@@ -32,6 +32,9 @@ func NewCmd() *cobra.Command {
 		},
 	}
 
+	cmd.Flags().String("pprof-server", "", "Start a pprof HTTP server on the given address (e.g. :6060)")
+	_ = viper.BindPFlag("pprof-server", cmd.Flags().Lookup("pprof-server"))
+
 	_ = viper.BindEnv("namespace", "NAMESPACE")
 	_ = viper.BindEnv("pod-name", "POD_NAME")
 	_ = viper.BindEnv("pgdata", "PGDATA")
