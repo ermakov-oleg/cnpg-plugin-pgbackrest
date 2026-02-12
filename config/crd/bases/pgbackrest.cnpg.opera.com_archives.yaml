@@ -378,6 +378,12 @@ spec:
                 description: InstanceSidecarConfiguration defines the configuration
                   for the sidecar that runs in the instance pods.
                 properties:
+                  additionalArgs:
+                    description: AdditionalArgs are appended to the sidecar container
+                      arguments
+                    items:
+                      type: string
+                    type: array
                   env:
                     description: The environment to be explicitly passed to the sidecar
                     items:

@@ -317,7 +317,7 @@ func (impl LifecycleImplementation) reconcilePod(
 	resources := impl.calculateSidecarResources(ctx, archive)
 	securityContext := impl.calculateSidecarSecurityContext(ctx, archive)
 
-	return reconcilePod(ctx, cluster, request, pluginConfiguration, env, resources, securityContext)
+	return reconcilePod(ctx, cluster, request, pluginConfiguration, archive, env, resources, securityContext)
 }
 
 func reconcilePod(
@@ -325,6 +325,7 @@ func reconcilePod(
 	cluster *cnpgv1.Cluster,
 	request *lifecycle.OperatorLifecycleRequest,
 	pluginConfiguration *config.PluginConfiguration,
+	archive *pgbackrestv1.Archive,
 	env []corev1.EnvVar,
 	resources *corev1.ResourceRequirements,
 	securityContext *corev1.SecurityContext,
@@ -340,12 +341,16 @@ func reconcilePod(
 	mutatedPod := pod.DeepCopy()
 
 	if len(pluginConfiguration.PgbackrestObjectName) != 0 {
+		args := []string{"instance"}
+		if archive != nil {
+			args = append(args, archive.Spec.InstanceSidecarConfiguration.AdditionalArgs...)
+		}
 		if err := reconcilePodSpec(
 			cluster,
 			&mutatedPod.Spec,
 			"postgres",
 			corev1.Container{
-				Args: []string{"instance"},
+				Args: args,
 			},
 			env, resources, securityContext,
 		); err != nil {

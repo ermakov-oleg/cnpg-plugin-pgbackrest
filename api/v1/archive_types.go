@@ -35,6 +35,9 @@ type InstanceSidecarConfiguration struct {
 	// SecurityContext for the sidecar container
 	// +optional
 	SecurityContext *corev1.SecurityContext `json:"securityContext,omitempty"`
+	// AdditionalArgs are appended to the sidecar container arguments
+	// +optional
+	AdditionalArgs []string `json:"additionalArgs,omitempty"`
 }
 
 // ArchiveSpec defines the desired state of Archive.
