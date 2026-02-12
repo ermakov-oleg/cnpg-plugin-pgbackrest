@@ -23,6 +23,23 @@ import (
 	pgbackrestApi "github.com/operasoftware/cnpg-plugin-pgbackrest/internal/pgbackrest/api"
 )
 
+// LogLevel represents a supported log verbosity level.
+// +kubebuilder:validation:Enum=error;warning;info;debug;trace
+type LogLevel string
+
+const (
+	// LogLevelError only logs errors.
+	LogLevelError LogLevel = "error"
+	// LogLevelWarning logs warnings and errors.
+	LogLevelWarning LogLevel = "warning"
+	// LogLevelInfo logs info, warnings, and errors. This is the default.
+	LogLevelInfo LogLevel = "info"
+	// LogLevelDebug logs debug messages and above.
+	LogLevelDebug LogLevel = "debug"
+	// LogLevelTrace logs everything.
+	LogLevelTrace LogLevel = "trace"
+)
+
 // InstanceSidecarConfiguration defines the configuration for the sidecar that runs in the instance pods.
 type InstanceSidecarConfiguration struct {
 	// The environment to be explicitly passed to the sidecar
@@ -35,6 +52,11 @@ type InstanceSidecarConfiguration struct {
 	// SecurityContext for the sidecar container
 	// +optional
 	SecurityContext *corev1.SecurityContext `json:"securityContext,omitempty"`
+	// LogLevel controls the verbosity of the sidecar logs.
+	// Supported values: error, warning, info, debug, trace. Default: info.
+	// +optional
+	// +kubebuilder:default=info
+	LogLevel LogLevel `json:"logLevel,omitempty"`
 }
 
 // ArchiveSpec defines the desired state of Archive.
