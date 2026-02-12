@@ -315,7 +315,8 @@ func loadBackupObjectFromExternalCluster(
 	contextLogger := log.FromContext(ctx)
 
 	contextLogger.Info("Recovering from external cluster",
-		"stanza", stanza,
+		"stanza", stanza)
+	contextLogger.Debug("Recovery archive details",
 		"archive", recoveryArchive)
 
 	env, err := pgbackrestCredentials.EnvSetRestoreCloudCredentials(
