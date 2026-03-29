@@ -383,6 +383,113 @@ var _ = Describe("LifecycleImplementation", func() {
 		})
 	})
 
+	Describe("ensureVolume", func() {
+		It("adds volume if not present in PodSpec", func() {
+			spec := &corev1.PodSpec{}
+			vol := corev1.Volume{
+				Name: "test-vol",
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
+				},
+			}
+
+			ensureVolume(spec, vol)
+			Expect(spec.Volumes).To(HaveLen(1))
+			Expect(spec.Volumes[0].Name).To(Equal("test-vol"))
+		})
+
+		It("replaces volume if volume with same name already exists", func() {
+			spec := &corev1.PodSpec{
+				Volumes: []corev1.Volume{
+					{
+						Name: "test-vol",
+						VolumeSource: corev1.VolumeSource{
+							EmptyDir: &corev1.EmptyDirVolumeSource{},
+						},
+					},
+				},
+			}
+			newVol := corev1.Volume{
+				Name: "test-vol",
+				VolumeSource: corev1.VolumeSource{
+					HostPath: &corev1.HostPathVolumeSource{Path: "/data"},
+				},
+			}
+
+			ensureVolume(spec, newVol)
+			Expect(spec.Volumes).To(HaveLen(1))
+			Expect(spec.Volumes[0].VolumeSource.HostPath).NotTo(BeNil())
+			Expect(spec.Volumes[0].VolumeSource.EmptyDir).To(BeNil())
+		})
+
+		It("does not duplicate volumes", func() {
+			spec := &corev1.PodSpec{
+				Volumes: []corev1.Volume{
+					{Name: "existing-vol"},
+				},
+			}
+			vol := corev1.Volume{
+				Name: "existing-vol",
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
+				},
+			}
+
+			ensureVolume(spec, vol)
+			ensureVolume(spec, vol)
+			Expect(spec.Volumes).To(HaveLen(1))
+		})
+	})
+
+	Describe("ensureVolumeMount", func() {
+		It("adds mount if not present in container", func() {
+			container := &corev1.Container{Name: "test"}
+			mount := corev1.VolumeMount{
+				Name:      "test-mount",
+				MountPath: "/data",
+			}
+
+			ensureVolumeMount(container, mount)
+			Expect(container.VolumeMounts).To(HaveLen(1))
+			Expect(container.VolumeMounts[0].Name).To(Equal("test-mount"))
+			Expect(container.VolumeMounts[0].MountPath).To(Equal("/data"))
+		})
+
+		It("replaces mount if mount with same name already exists", func() {
+			container := &corev1.Container{
+				Name: "test",
+				VolumeMounts: []corev1.VolumeMount{
+					{Name: "test-mount", MountPath: "/old"},
+				},
+			}
+			newMount := corev1.VolumeMount{
+				Name:      "test-mount",
+				MountPath: "/new",
+			}
+
+			ensureVolumeMount(container, newMount)
+			Expect(container.VolumeMounts).To(HaveLen(1))
+			Expect(container.VolumeMounts[0].MountPath).To(Equal("/new"))
+		})
+
+		It("does not duplicate mounts", func() {
+			container := &corev1.Container{
+				Name: "test",
+				VolumeMounts: []corev1.VolumeMount{
+					{Name: "test-mount", MountPath: "/data"},
+				},
+			}
+			mount := corev1.VolumeMount{
+				Name:      "test-mount",
+				MountPath: "/data",
+			}
+
+			ensureVolumeMount(container, mount)
+			ensureVolumeMount(container, mount)
+			Expect(container.VolumeMounts).To(HaveLen(1))
+		})
+	})
+
 	Describe("reconcileJob with security context", func() {
 		It("applies custom security context to job sidecar when configured", func(ctx SpecContext) {
 			job := &batchv1.Job{
